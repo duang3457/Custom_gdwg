@@ -4,31 +4,33 @@
 
 # 1 Change Log <a name="1-change-log"></a>
 
-N/A
-
 # 2 The Task <a name="2-the-task"></a>
 
 In this assignment, you will write a *generic directed weighted graph* (GDWG) with value-semantics in C++. Both the data stored at a node and the weight stored at an edge will be parameterised types. The types may be different. For example, here is a graph with nodes storing `std::string` and edges weighted by `int`:
 
 ```cpp
-using graph = gdwg::graph<std::string, int>;
+using graph = gdwg::Graph<std::string, int>;
 ```
 
 Formally, this directed weighted graph *G* = (*N*,  *E*) will consist of a set of nodes *N* and a set of unweighted/weighted edges *E*.
 
-All nodes are unique, that is to say, no two nodes will have the same value and shall not compare equal using `operator==`.
+Explicit assumptions for *N* and *E*: copyable, comparable (i.e. you can do ==, < etc.), streamable (i.e. you can use `operator<<`) and hashable.
+
+All nodes should be unique; that is to say, no two nodes will have the same value and shall not compare equal using `operator==`.
 
 Given a node, an edge directed into it is called an *incoming edge* and an edge directed out of it is called an *outgoing edge*. The *in-degree* of a node is the number of its incoming edges. Similarly, the *out-degree* of a node is the number of its outgoing edges.
 
-A graph can include both weighted and unweighted edges. In graph theory, unweighted edges are typically treated as having a weight as 1. This applies to this assignment as well, therefore, you need to differentiate between weighted and unweighted edges in your implementation.
+A graph can include both weighted and unweighted edges. This applies to this assignment as well, therefore, you need to differentiate between weighted and unweighted edges in your implementation. Only **ONE** unweighted edge exists between a given source and destination node.
 
-You need to make use of dynamic polymorphism to implement a base `edge` class, from which `unweighted_edge` and `weighted_edge` classes will inherit. The `edge` class will represent a directed edge from a source node `src` to a destination node `dst`. The derived classes will specialise the behaviour of the edge based on whether it is weighted or unweighted.
+Edges are ordered first by source node, then by destination node, and finally by edge weight (if it exists) in ascending order. Unweighted edges should precede all weighted edges with the same source and destination node. If two edges have equal source and destination nodes, as well as equal weights, they are considered to be equal.
 
-To summarise, you will need to implement the following classes along with `gdwg::graph`:
+You need to make use of dynamic polymorphism to implement a base `Edge` class, from which `UnweightedEdge` and `WeightedEdge` classes will inherit. The `Edge` class will represent a directed edge from a source node `src` to a destination node `dst`. The derived classes will specialise the behaviour of the edge based on whether it is weighted or unweighted.
 
-* edge: An abstract base class representing an edge in the graph, which can be either weighted or unweighted. It declares pure virtual functions that must be implemented by its derived classes.
-* weighted_edge: A derived class of `edge` that represents an edge with an associated weight.
-* unweighted_edge: A derived class of `edge` that represents an edge without an associated weight, the weight is treated as 1.
+To summarise, you will need to implement the following classes along with `gdwg::Graph`:
+
+* `Edge`: An abstract base class representing an edge in the graph, which can be either weighted or unweighted. It declares virtual functions that must be implemented by its derived classes.
+* `WeightedEdge`: A derived class of `Edge` that represents an edge with an associated weight.
+* `UnweightedEdge`: A derived class of `Edge` that represents an edge without an associated weight.
 
 Note that edges can be **reflexive**, meaning the source and destination nodes of an edge could be the same.
 
@@ -48,9 +50,6 @@ Some words have special meaning in this document. This section precisely defines
 * *Unspecified*: the implementation is allowed to make its own decisions regarding what is unspecified, provided that it still follows the explicitly specified wording.
 * An *Effects* element may specify semantics for a function `F` in code using the term *Equivalent to*. The semantics for `F` are interpreted as follows:
   * All of the above terminology applies to the provided code, whether or not it is explicitly specified.
-
-    [*Example*: If `F` has a *Preconditions* element, but the code block doesn’t explicitly check them, then it is implied that the preconditions have been checked. —*end example*]
-
   * If there is not a *Returns* element, and `F` has a non-`void` return type, all the return statements are in the code block.
   * *Throws*, *Postconditions*, and *Complexity* elements always have priority over the code block.
 * Specified complexity requirements are upper bounds, and implementations that provide better complexity guarantees meet the requirements.
@@ -59,7 +58,7 @@ Some words have special meaning in this document. This section precisely defines
 * This section makes use of [stable.names]. A stable name is a short name for a (sub)section, and isn’t supposed to change. We will use these to reference specific sections of the document.
 
   [*Example*:
-  > Student: Do we need to define `gdwg::graph<N, E>::operator!=`?
+  > Student: Do we need to define `gdwg::Graph<N, E>::operator!=`?
   >
   > Tutor: [other.notes] mentions that you don’t need to so you can get used to C++20’s generated operators.
 
@@ -70,7 +69,7 @@ Some words have special meaning in this document. This section precisely defines
 **It’s very important your constructors work. If we can’t validly construct your objects, we can’t test any of your other functions.**
 
 ```cpp
-graph();
+Graph();
 ```
 
 1. *Effects*: <a href="https://en.cppreference.com/w/cpp/language/value_initialization">Value initialises</a> all members.
@@ -78,19 +77,19 @@ graph();
 2. *Throws*: Nothing.
 
 ```cpp
-graph(std::initializer_list<N> il);
+Graph(std::initializer_list<N> il);
 ```
 3. *Effects*: Equivalent to: `graph(il.begin(), il.end());`
 
 ```cpp
 template<typename InputIt>
-graph(InputIt first, InputIt last);
+Graph(InputIt first, InputIt last);
 ```
 4. *Preconditions*: Type `InputIt` models *<a href="https://en.cppreference.com/w/cpp/named_req/InputIterator">Cpp17 Input Iterator</a>* and is indirectly readable as type `N`.
 
 5. *Effects*: Initialises the graph’s node collection with the range `[first, last)`.
 ```cpp
-graph(graph&& other) noexcept;
+Graph(Graph&& other) noexcept;
 ```
 6. *Postconditions*:
   `*this` is equal to the value `other` had before this constructor’s invocation.
@@ -98,7 +97,7 @@ graph(graph&& other) noexcept;
   All iterators pointing to elements owned by `*this` prior to this constructor’s invocation are invalidated.
   All iterators pointing to elements owned by `other` prior to this constructor’s invocation remain valid, but now point to the elements owned by `*this`.
 ```cpp
-auto operator=(graph&& other) noexcept -> graph&;
+auto operator=(Graph&& other) noexcept -> Graph&;
 ```
 7. *Effects*: All existing nodes and edges are either move-assigned to, or are destroyed.
 
@@ -111,12 +110,12 @@ auto operator=(graph&& other) noexcept -> graph&;
 9. *Returns*: `*this`.
 
 ```cpp
-graph(graph const& other);
+Graph(Graph const& other);
 ```
 10. *Postconditions*: `*this == other` is `true`.
 
 ```cpp
-auto operator=(graph const& other) -> graph&;
+auto operator=(Graph const& other) -> Graph&;
 ```
 11. *Postconditions*:
     * `*this == other` is `true`.
@@ -125,21 +124,24 @@ auto operator=(graph const& other) -> graph&;
 
 # 2.3 Edge Class Hierachy
 
-## 2.3.1 edge
+## 2.3.1 Edge
 
-The `edge` class is an abstract **BASE** class that declares **PURE** virtual functions which must be implemented by its derived classes.
+The `Edge` class should be an abstract **BASE** class, which means at least **one** of its member functions must be declared as **pure** virtual. `Edge` class takes template typenames in the same order as `Graph` class.
 
-You will note that **ONLY** the member functions listed below can be specified as `public`, you are free to create other private virtual functions to help with the implementation of the derived classes and the features required for `gdwg::graph`.
+[Note: Of the member functions you are required to implement for edge, there is at least one natural candidate which should be pure virtual. You should consider declaring a function as **pure** virtual when its behaviour must be implemented differently by each derived class. —end note] 
+
+You will note that **ONLY** the member functions listed below can be specified as public in edge or its derived classes. You are free to create other private functions to help with the implementation of the derived classes and the features required for `gdwg::Graph`.
 
 NOTE: We didn't specify the keywords for functions such as `const`, `virtual`, `override`, or `noexcept`, this is intentional. You should use them where appropriate.
+
 
 ```cpp
 auto print_edge() -> std::string;
 ```
   1. *Effects*: Returns a string representation of the edge.
   2. *Returns*: A string representation of the edge.
-  3. *Remarks*: The format of the string representation is `src -> dst | W |  weight` if the edge is weighted, and `src -> dst | U` if the edge is unweighted.
-  * Note: `print_edge` will be used in the `operator<<` overload for the `graph` class.
+  3. *Remarks*: The format of the string representation is `src -> dst | W | weight` if the edge is weighted, and `src -> dst | U`if the edge is unweighted. There should not be a newline character `\n` at the end of the string representation.
+  * Note: `print_edge` can be used in the `operator<<` overload for the `graph` class.
 ```cpp
 auto is_weighted() -> bool;
 ```
@@ -158,28 +160,41 @@ auto get_nodes() -> std::pair<N, N>;
   9. *Effects*: Returns the source and destination nodes of the edge.
   10. *Returns*: A pair of the source and destination nodes of the edge.
 
+```cpp
+auto operator==(edge const& other) -> bool;
+```
+  11. *Returns*: Returns true if two edges are equal, false otherwise
 
-**As a polymorphic base class, `edge` should also have a public virtual destructor.**
+**As a polymorphic base class, `Edge` should also have a public virtual destructor.**
 
-## 2.3.2 weighted_edge
+## 2.3.2 WeightedEdge
 
-* The `weighted_edge` class inherits from `edge` and represents a weighted edge in the graph.
+* The `WeightedEdge` class should have a **public** constructor that takes the `src`, `dst` node, and `weight` as parameters and initialises the corresponding member variables.
 
-* It **MUST** implement the `edge` class’s pure virtual functions to provide appropriate funtionality for weighted edges.
+```cpp
+WeightedEdge(N const& src, N const& dst, E const& weight);
+```
 
-* Additionally, the `weighted_edge` class should have a constructor that takes the `src`, `dst` node, and `weight` as parameters and initialises the corresponding `private` member variables.
+* The `WeightedEdge` class inherits from `Edge` and represents a weighted edge in the graph.
 
-## 2.3.3 unweighted_edge
+* It **MUST** implement the `Edge` class’s virtual functions to provide appropriate functionality for weighted edges.
 
-* The `unweighted_edge` class inherits from `edge` and represents an unweighted edge in the graph.
 
-* It **MUST** implement the `edge` class’s pure virtual functions to provide appropriate functionality for unweighted edges.
 
-* Similar to the `weighted_edge` class, the `unweighted_edge` class should have a constructor that takes the `src` node and `dst` node as parameters and initialises the corresponding private member variables.
+## 2.3.3 UnweightedEdge
+
+* Similar to the `WeightedEdge` class, the `UnweightedEdge` class should have a **public**
+constructor that takes the `src` node and `dst` node as parameters and initialises the corresponding member variables.
+
+```cpp
+UnweightedEdge(N const& src, N const& dst);
+```
+
+* The `UnweightedEdge` class inherits from `Edge` and represents an unweighted edge in the graph.
+
+* It **MUST** implement the `Edge` class’s virtual functions to provide appropriate functionality for unweighted edges.
 
 # 2.4 Modifiers
-
-**Note: The edge-related functions (e.g., `insert_edge`, `replace_node`) will be responsible for creating and managing the appropriate `edge` objects (`weighted_edge` or `unweighted_edge`) based on the provided parameters.**
 
 ```cpp
 auto insert_node(N const& value) -> bool;
@@ -191,18 +206,18 @@ auto insert_node(N const& value) -> bool;
 3. *Returns*: `true` if the node is added to the graph and `false` otherwise.
 
 ```cpp
-auto insert_edge(N const& src, N const& dst, std::optional<edge> weight = std::nullopt) -> bool;
+auto insert_edge(N const& src, N const& dst, std::optional<E> weight = std::nullopt) -> bool;
 ```
 
-4. *Effects*: Adds a new edge representing `src` → `dst` with an optional `weight`. If weight is `std::nullopt`, an `unweighted_edge` is created. Otherwise, a `weighted_edge` with the specified weight is created. The edge is only added if there is no existing edge between `src` and `dst` with the same weight.
+4. *Effects*: Adds a new edge representing `src` → `dst` with an optional `weight`. If weight is `std::nullopt`, an `UnweightedEdge` is created. Otherwise, a `WeightedEdge` with the specified weight is created. The edge is only added if there is no existing edge between `src` and `dst` with the same weight.
 
     [*Note*:⁠ Nodes are allowed to be connected to themselves. —*end note*]
 
 5. *Postconditions*: All iterators are invalidated.
 
-6. *Returns*: `true` if the node is added to the graph and `false` otherwise.
+6. *Returns*: `true` if the edge is added to the graph and `false` otherwise.
 
-7. *Throws*: `std::runtime_error("Cannot call gdwg::graph<N, E>::insert_edge when either src or dst node does not exist")` if either of `is_node(src)` or `is_node(dst)` are `false`.
+7. *Throws*: `std::runtime_error("Cannot call gdwg::Graph<N, E>::insert_edge when either src or dst node does not exist")` if either of `is_node(src)` or `is_node(dst)` are `false`.
 
     [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
 
@@ -216,7 +231,7 @@ auto replace_node(N const& old_data, N const& new_data) -> bool;
 
 10. *Returns*: `false` if a node that contains value `new_data` already exists and `true` otherwise.
 
-11. *Throws*: `std::runtime_error("Cannot call gdwg::graph<N, E>::replace_node on a node that doesn't exist")` if `is_node(old_data)` is `false`.
+11. *Throws*: `std::runtime_error("Cannot call gdwg::Graph<N, E>::replace_node on a node that doesn't exist")` if `is_node(old_data)` is `false`.
 
     [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
 
@@ -224,11 +239,11 @@ auto replace_node(N const& old_data, N const& new_data) -> bool;
 auto merge_replace_node(N const& old_data, N const& new_data) -> void;
 ```
 
-12. *Effects*: The node equivalent to `old_data` in the graph are replaced with instances of `new_data`. After completing, every incoming and outgoing edge of `old_data` becomes an incoming/ougoing edge of `new_data`, except that duplicate edges shall be removed.
+12. *Effects*: The node equivalent to `old_data` in the graph are replaced with instances of `new_data`. After completing, every incoming and outgoing edge of `old_data` becomes an incoming/outgoing edge of `new_data`, except that duplicate edges shall be removed.
 
 13. *Postconditions*: All iterators are invalidated.
 
-14. *Throws*: `std::runtime_error("Cannot call gdwg::graph<N, E>::merge_replace_node on old or new data if they don't exist in the graph")` if either of `is_node(old_data)` or `is_node(new_data)` are `false`.
+14. *Throws*: `std::runtime_error("Cannot call gdwg::Graph<N, E>::merge_replace_node on old or new data if they don't exist in the graph")` if either of `is_node(old_data)` or `is_node(new_data)` are `false`.
 
     [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
 
@@ -256,7 +271,7 @@ auto merge_replace_node(N const& old_data, N const& new_data) -> void;
 auto erase_node(N const& value) -> bool;
 ```
 
-16. *Effects*: Erases all nodes equivalent to `value`, including all incoming and outgoing edges.
+16. *Effects*: Erases node equivalent to `value`, including all incoming and outgoing edges.
 
 17. *Returns*: `true` if `value` was removed; `false` otherwise.
 18. *Postconditions*: All iterators are invalidated.
@@ -265,18 +280,18 @@ auto erase_node(N const& value) -> bool;
 auto erase_edge(N const& src, N const& dst, std::optional<E> weight = std::nullopt) -> bool;
 ```
 
-20. *Effects*: Erases the edge representing `src` → `dst` with the specified weight. If weight is `std::nullopt`, it erases the `unweighted_edge` between `src` and `dst`. If weight has a value, it erases the weighted_edge between src and dst with the specified weight.
+20. *Effects*: Erases the edge representing `src` → `dst` with the specified weight. If weight is `std::nullopt`, it erases the `UnweightedEdge` between `src` and `dst`. If weight has a value, it erases the `WeightedEdge` between src and dst with the specified weight.
 21. *Returns*: `true` if an edge was removed; `false` otherwise.
 22. *Postconditions*: All iterators are invalidated.
-23. *Throws*: `std::runtime_error("Cannot call gdwg::graph<N, E>::erase_edge on src or dst if they don't exist in the graph")` if either `is_node(src)` or `is_node(dst)` is `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
-24. *Complexity*: *O*(log *n* + *e*), where *n* is the total number of stored nodes and *e* is the total number of stored edges.
+23. *Throws*: `std::runtime_error("Cannot call gdwg::Graph<N, E>::erase_edge on src or dst if they don't exist in the graph")` if either `is_node(src)` or `is_node(dst)` is `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
+24. *Complexity*: *O*(log( *n*) + *e*), where *n* is the total number of stored nodes and *e* is the total number of stored edges.
 
 ```cpp
 auto erase_edge(iterator i) -> iterator;
 ```
 
 25. *Effects*: Erases the edge pointed to by `i`.
-26. *Complexity*: *O*(log *n* + *e*), where *n* is the total number of stored nodes and *e* is the total number of stored edges. [*Note*: This complexity requirement is slightly weaker than a real-world container to help make the assignment easier. —*end note*]
+26. *Complexity*: *O*(log (*n*) + *e*), where *n* is the total number of stored nodes and *e* is the total number of stored edges. [*Note*: This complexity requirement is slightly weaker than a real-world container to help make the assignment easier. —*end note*]
 27. *Returns*: An iterator pointing to the element immediately after `i` prior to the element being erased. If no such element exists, returns `end()`.
 28. *Postconditions*: All iterators are invalidated. [*Note*: The postcondition is slightly stricter than a real-world container to help make the assignment easier (i.e. we won’t be testing any iterators post-erasure). —*end note*]
 
@@ -284,9 +299,9 @@ auto erase_edge(iterator i) -> iterator;
 auto erase_edge(iterator i, iterator s) -> iterator;
 ```
 
-29. *Effects*: Erases all edges between the iterators `[i, s)`.
+29. *Effects*: Erases all edges between the iterators `[i, s)`. `[i, s)` must refer to a valid range in `*this` - `s` must come strictly after `i`.
 
-30. *Complexity* *O*(*d*(log *n* + *e*)), where *d* = `std::distance(i, s)`. [*Note*: This complexity requirement is slightly weaker than a real-world container to help make the assignment easier. —*end note*]
+30. *Complexity* *O*(*d*(log( *n*) + *e*)), where *d* = `std::distance(i, s)`. [*Note*: This complexity requirement is slightly weaker than a real-world container to help make the assignment easier. —*end note*]
 
 31. *Returns*: An iterator equivalent to `s` prior to the items iterated through being erased. If no such element exists, returns `end()`.
 
@@ -320,42 +335,42 @@ auto clear() noexcept -> void;
 ```
 
 4. *Returns*: `true` if an edge `src` → `dst` exists in the graph, and `false` otherwise.
-5. *Throws*: `std::runtime_error("Cannot call gdwg::graph<N, E>::is_connected if src or dst node don't exist in the graph")` if either of `is_node(src)` or `is_node(dst)` are `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
+5. *Throws*: `std::runtime_error("Cannot call gdwg::Graph<N, E>::is_connected if src or dst node don't exist in the graph")` if either of `is_node(src)` or `is_node(dst)` are `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
 
 ```cpp
 [[nodiscard]] auto nodes() -> std::vector<N>;
 ```
 
-6. *Returns*: A sequence of all stored nodes, sorted in ascending order.
+6. *Returns*: A vector of all stored nodes, sorted in ascending order. This returns **copies** of the specified data.
 
 7. *Complexity*: *O*(*n*), where *n* is the number of stored nodes.
 
 ```cpp
-[[nodiscard]] auto edges(N const& src, N const& dst) -> std::vector<gdwg::edge>;
+[[nodiscard]] auto edges(N const& src, N const& dst) -> std::vector<std::unique_ptr<edge<N,E>>>;
 ```
 
-8. *Returns*: A sequence of edges from `src` to `dst`, start with the unweighted edge (if exists), then the rest of the weighted edges are sorted in ascending order.
+8. *Returns*: All edges from `src` to `dst`, start with the unweighted edge (if exists), then the rest of the weighted edges are sorted in ascending order by edge weights. This returns **copies** of the specified data.
 
-9. *Complexity*: *O*(log *n* + *e*), where *n* is the number of stored nodes and *e*is the number of stored edges.
+9. *Complexity*: *O*(log( *n*) + *e*), where *n* is the number of stored nodes and *e*is the number of stored edges.
 
-10. *Throws*: `std::runtime_error("Cannot call gdwg::graph<N, E>::edges if src or dst node don't exist in the graph")` if either of `is_node(src)` or `is_node(dst)` are `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
+10. *Throws*: `std::runtime_error("Cannot call gdwg::Graph<N, E>::edges if src or dst node don't exist in the graph")` if either of `is_node(src)` or `is_node(dst)` are `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
 
 ```cpp
 [[nodiscard]] auto find(N const& src, N const& dst, std::optional<E> weight = std::nullopt) -> iterator;
 ```
 
-11. *Returns*: An iterator pointing to an edge equivalent to the specified `src`, `dst`, and `weight`. If weight is `std::nullopt`, it searches for an `unweighted_edge` between `src` and `dst`. If weight has a value, it searches for a `weighted_edge` between `src` and `dst` with the specified weight. Returns `end()` if no such edge exists.
-12. *Complexity*:  O(log *n* + *e*), where n is the number of stored nodes and e is the number of matching edges (either weighted or unweighted) between src and dst.
+11. *Returns*: An iterator pointing to an edge equivalent to the specified `src`, `dst`, and `weight`. If weight is `std::nullopt`, it searches for an `UnweightedEdge` between `src` and `dst`. If weight has a value, it searches for a `WeightedEdge` between `src` and `dst` with the specified weight. Returns `end()` if no such edge exists.
+12. *Complexity*:  O(log(*n*) + *e*), where n is the number of stored nodes and e is the number of edges (either weighted or unweighted) between src and dst.
 
 ```cpp
 [[nodiscard]] auto connections(N const& src) -> std::vector<N>;
 ```
 
-13. *Returns*: A sequence of nodes (found from any immediate outgoing edge) connected to `src`, sorted in ascending order, with respect to the connected nodes.
+13. *Returns*: All nodes (found from any immediate outgoing edge) connected to `src`, sorted in ascending order. This returns **copies** of the specified data.
 
-14. *Complexity*: *O*(log *n* + *e*), where *e* is the number of outgoing edges associated with `src`.
+14. *Complexity*: *O*(log (*n*) + *e*), where *e* is the number of outgoing edges associated with `src`.
 
-15. *Throws*: `std::runtime_error("Cannot call gdwg::graph<N, E>::connections if src doesn't exist in the graph")` if `is_node(src)` is `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
+15. *Throws*: `std::runtime_error("Cannot call gdwg::Graph<N, E>::connections if src doesn't exist in the graph")` if `is_node(src)` is `false`. [*Note*: Unlike Assignment 2, the exception message must be used verbatim. —*end note*]
 
 # 2.6 Iterator Access
 
@@ -375,7 +390,7 @@ auto clear() noexcept -> void;
 # 2.7 Comparisons
 
 ```cpp
-[[nodiscard]] auto operator==(graph const& other) -> bool;
+[[nodiscard]] auto operator==(Graph const& other) -> bool;
 ```
 
 1. *Returns*: `true` if `*this` and `other` contain exactly the same nodes and edges, and `false` otherwise.
@@ -385,12 +400,10 @@ auto clear() noexcept -> void;
 # 2.8 Extractor
 
 ```cpp
-friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream&;
+friend auto operator<<(std::ostream& os, Graph const& g) -> std::ostream&;
 ```
 
-Note: You are REQUIRED to use `print_edge` function implemented by both `unweighted_edge` and `weighted_edge` to format the output, failed to do so will incur mark deduction.
-
-1. *Effects*: Behaves as a <a href="https://en.cppreference.com/w/cpp/named_req/FormattedOutputFunction">formatted output function</a> of `os`.
+1. *Effects*: Behaves as a <a href="https://en.cppreference.com/w/cpp/named_req/FormattedOutputFunction">formatted output function</a> of `os`. If `graph.empty()` is `true`, the output can be either `()` or an empty string.
 
 2. *Returns*: `os`.
 
@@ -415,20 +428,20 @@ Note: You are REQUIRED to use `print_edge` function implemented by both `unweigh
 )
 </blockquote>
 
-<p>where <code>[node<span class="math inline"><sub>n</sub></span> -> node<span class="math inline"><sub>1</sub></span>] | U</code>, …, <code>[node<span class="math inline"><sub>n</sub></span> -> node<span class="math inline"><sub>n</sub></span>] | W | [weight]</code> are placeholders for each node’s connections and the corresponding weight the edge has, start with the unweighted edge(if exists), then the rest of the weighted edges are sorted in ascending order.</p>
+<p>where <code>[node<span class="math inline"><sub>n</sub></span> -> node<span class="math inline"><sub>1</sub></span>] | U</code>, …, <code>[node<span class="math inline"><sub>n</sub></span> -> node<span class="math inline"><sub>n</sub></span>] | W | [weight]</code> are placeholders for each node’s connections edge type and the corresponding weight(if exists) the edge has, always start with unweighted edges, then weighted edges, sorted in ascending order separately.</p>
 
-[*Example*:
-
-[*Note*: If a node doesn’t have any connections, then its corresponding <code>[edges<span class="math inline"><sub>*n*</sub></span>]</code> should be a line-separated pair of parentheses —*end note*]
+[*Note*: If a node doesn’t have any connections, the corresponding field will be represented as a line-separated pair of parentheses —*end note*]
 
 [*Example*:
 ```cpp
-using graph = gdwg::graph<int, int>;
+using graph = gdwg::Graph<int, int>;
 auto const v = std::vector<std::tuple<int, int, std::optional<int>>>{
     {4, 1, -4},
     {3, 2, 2},
     {2, 4, std::nullopt},
+    {2, 4, 2},
     {2, 1, 1},
+    {4, 1, std::nullopt},
     {6, 2, 5},
     {6, 3, 10},
     {1, 5, -1},
@@ -437,7 +450,7 @@ auto const v = std::vector<std::tuple<int, int, std::optional<int>>>{
     {5, 2, std::nullopt},
 };
 
-auto g = graph{};
+auto g = Graph{};
 for (const auto& [from, to, weight] : v) {
     g.insert_node(from);
     g.insert_node(to);
@@ -451,19 +464,20 @@ g.insert_node(64);
 
 auto out = std::ostringstream{};
 out << g;
-auto const expected_output = std::string_view(R"(
-1 (
+auto const expected_output = std::string_view(R"(1 (
   1 -> 5 | W | -1
 )
 2 (
-  2 -> 4 | U
   2 -> 1 | W | 1
+  2 -> 4 | U
+  2 -> 4 | W | 2
 )
 3 (
   3 -> 2 | W | 2
   3 -> 6 | W | -8
 )
 4 (
+  4 -> 1 | U
   4 -> 1 | W | -4
   4 -> 5 | W | 3
 )
@@ -484,11 +498,11 @@ CHECK(out.str() == expected_output);
 
 # 2.9 Iterator
 
-Note that the `iterator` has a different value type compared with `gdwg::edge`. You will need to convert the edge to the iterator value type when dereferencing the iterator.
+Note that the `iterator` has a different value type compared with `gdwg::Edge`. 
 
 ```cpp
 template<typename N, typename E>
-class graph<N, E>::iterator {
+class Graph<N, E>::iterator {
 public:
   using value_type = struct {
     N from;
@@ -519,9 +533,8 @@ private:
 };
 ```
 
-1. Elements are lexicographically ordered by their source node, destination node, and edge weight, in ascending order.
-2. Nodes without any connections are not traversed.
-3. [*Note*: `gdwg::graph<N, E>::iterator` models <a href="https://en.cppreference.com/w/cpp/iterator/bidirectional_iterator">`std::bidirectional_iterator`</a>. —*end note*]
+1. Nodes without any connections are not traversed.
+2. [*Note*: `gdwg::Graph<N, E>::iterator` models <a href="https://en.cppreference.com/w/cpp/iterator/bidirectional_iterator">`std::bidirectional_iterator`</a>. —*end note*]
 
 ## 2.9.1 Iterator constructor
 
@@ -554,10 +567,10 @@ auto operator++() -> iterator&;
 ```
 1. *Effects*: Advances `*this` to the next element in the iterable list.
 
-[*Example*: In this way, your iterator will iterator through a graph like the one below producing the following tuple values when deferenced each time:
+[*Example*: In this way, your iterator will iterate through a graph like the one below producing the following tuple values when deferenced each time:
 
 ```cpp
-gdwg::graph<int, int>
+gdwg::Graph<int, int>
 ```
 
 <p><img src="https://qph.fs.quoracdn.net/main-qimg-2ea8bf9286505bf2ccd63893e05eb5f9" /></p>
@@ -619,11 +632,11 @@ auto operator==(iterator const& other) -> bool;
 
 # 2.10 Compulsory internal representation
 
-Your graph is **required** to own the resources (nodes and edge weights) that are passed in through the insert functions. This means creating memory on the heap and doing a proper copy of the values from the caller. This is because resources in your graph should outlive the caller’s resouce that was passed in in case it goes out of scope. For example, we want the following code to be valid.
+Your graph is **required** to own the resources (nodes and edge weights) that are passed in through the insert functions. This means creating memory on the heap and doing a proper copy of the values from the caller. This is because resources in your graph should outlive the caller’s resource that was passed in in case it goes out of scope. For example, we want the following code to be valid.
 
 ```cpp
 auto main() -> int {
-  gdwg::graph<std::string, int> g;
+  gdwg::Graph<std::string, int> g;
   {
     std::string s1{"Hello"};
     g.insert_node(s1);
@@ -636,23 +649,11 @@ auto main() -> int {
 }
 ```
 
-Your graph is **required** to use smart pointers (however you please) to solve this problem.
+Your graph must not internally store redundant copies of nodes or edges. You may wish to use smart pointers (e.g. std::unique_ptr and std::shared_ptr) to achieve this, but you are not required to.
 
 1. For each node, you are only allowed to have one underlying resource (heap) stored in your graph for it.
 
-2. For each edge, no matter it's weighted or unweighted, you should avoid using unnecessary additional memory wherever possible.
-
-[*Hint*: In your own implementation you’re likely to use some containers to store things, and depending on your implementation choice, somewhere in those containers you’ll likely use either `std::unique_ptr<T>` or `std::shared_ptr<T>` —*end hint*]
-
-## 2.10.1 But why smart pointers
-
-You could feasibly implement the assignment without any smart pointers, through lots of redundant copying. For example, having a massive data structure like:
-
-```cpp
-std::map<N, std::vector<std::pair<N, E>>>
-```
-
-You can see that in this structure you would have duplicates of nodes when trying to represent this complex structure. This takes up a lot of space. We want you to build a space efficient graph. This means only storing one instance of each node and edge.
+2. For each edge, you are not required to use `Edge` for internal representation, however no matter it's weighted or unweighted, you should avoid using unnecessary additional memory wherever possible.
 
 # 2.11 Other notes
 
@@ -667,7 +668,8 @@ You must:
 You must **NOT**:
 
 * Write to any files that aren’t provided in the repo (e.g. storing your vector data in an auxilliary file)
-* Add additional members to the <b style="color: red;">public</b> interface.
+* Add additional members to the <b style="color: red;">public</b> interface. The **only** exception is you can add friend non-member operators
+
 
 You:
 
@@ -690,7 +692,7 @@ As noted in <a href="#29-compulsory-internal-representation-gdwginternal">the co
 
 ## 3. Marking Criteria
 
-This assignment will contribute 20% to your final mark.
+This assignment will contribute 30% to your final mark.
 
 The assessment for the assignment recognises the difficulty of the task, the importance of style,
 and the importance of appropriate use of programming methods (e.g. using while loops instead of a
@@ -710,7 +712,7 @@ dozen if statements).
     <td>
       <b>Your tests</b><br />
       You are required to write your own tests to ensure your program works.
-      You will write tests in the <code>filtered_string_view.test.cpp</code> file. Please read the <a href="https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md">Catch2 tutorial</a> or review lecture/lab content to see how to write tests. Tests will be marked on several
+      You will write tests in the <code>gdwg_graph.test.cpp</code> file. Please read the <a href="https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md">Catch2 tutorial</a> or review lecture/lab content to see how to write tests. Tests will be marked on several
       factors. These include, <em>but are not limited to</em>:
       <ul>
         <li>Correctness — an incorrect test is worse than useless.</li>
@@ -741,7 +743,7 @@ dozen if statements).
       Your adherence to good C++ best practices as shown in lectures and as documented on the coure website.
       This is based on how well you use modern C++ methodologies taught in this course as opposed to using
       backwards-compatible C methods.
-      This section will also include marks for how well you follow general best porgramming practices, including maintaining
+      This section will also include marks for how well you follow general best programming practices, including maintaining
       small functions, reducing nesting in loops, having meaningful variable names, etc.
       You may also receive a penalty for this section if your code is not formatted perfectly according to the clang-format
       config file in your repo.
@@ -755,14 +757,14 @@ Please note: Significant penalties may apply if you do not comply with the 'Git 
 
 It's imperative that we are able to track your progress when marking.
 
-For assignment 1, there are some requirements for us to track your ongoing progress:
+For assignment 3, there are some requirements for us to track your ongoing progress:
 
 1. You must make commits on at least 3 unique days prior to due date.
 2. All of your commits to master must successfully compile (according to the pipeline). You are given 3 exceptions.
 3. Your commits must be meaningful in description (e.g. "Continued work on loop speed")
 4. Each commit include no more than 50 lines additions of code (this may differ in future assignments). You are given no exceptions.
 
-Failure to adhere to these guidelines in their entirety may result in a mimumum 20% penalty. Any moderate or significant failure may result in a 0 grade.
+Failure to adhere to these guidelines in their entirety may result in a minimum 20% penalty. Any moderate or significant failure may result in a 0 grade.
 
 Please note: If you choose to work on separate branches before merging into master, you must squash your commits when merging back in. This means that you can make many commits on other branches fine, it's just whatever comes back to master needs to be a single commit that compiles with no more than 50 line additions.
 
@@ -802,14 +804,15 @@ If you want to check if you've actually not totally screwed it all up, and see i
 
 ## 7. Submission
 
-This assignment is due *Friday 2nd of August, 19:59:59*.
+This assignment is due *Friday, 8th of August, 19:59:59*.
 
 To submit your assignment, you must you've pushed all of your code to your gitlab master branch. You can check if you've done this properly by seeing what code is on the gitlab site on your master branch.
  
 We will collect the latest work on your master branch of gitlab at the time of submission.
 
-It is your responsibiltiy to ensure that your code can run successfully on a CSE machine / VLAB when cloned fresh from Gitlab.
+It is your responsibility to ensure that your code can run successfully on a CSE machine / VLAB when cloned fresh from Gitlab.
 
 ## 8. Late Submission Policy
 
 Late submissions are not accepted, except in the case of ELS adjustment or Special Consideration approval.
+

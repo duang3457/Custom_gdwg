@@ -8,7 +8,7 @@ auto main() -> int {
 	//  because withour your implementation
 	//  it will not compile. Uncomment them
 	//  once you've done the work
-	/*auto g = gdwg::graph<std::string, int>{};
+	/*auto g = gdwg::Graph<std::string, int>{};
 	g.insert_node("hello");
 	g.insert_node("how");
 	g.insert_node("are");
@@ -25,7 +25,7 @@ auto main() -> int {
 
 	std::cout << g << "\n";
 
-	auto g2 = gdwg::graph<std::string, int>(g);
+	auto g2 = gdwg::Graph<std::string, int>(g);
 
 	std::cout << g2 << "\n";
 
@@ -33,6 +33,11 @@ auto main() -> int {
 	// https://en.cppreference.com/w/cpp/language/structured_binding
 	// It allows you to unpack your tuple.
 	for (auto const& [from, to, weight] : g) {
-	    std::cout << from << " -> " << to << " (weight " << weight << ")\n";
+	    std::cout << from << " -> " << to << " ";
+	    if (weight.value()) {
+	        std::cout << "(weight " << weight << ")\n";
+	    } else {
+	        std::cout << "(no weight)\n";
+	    }
 	}*/
 }

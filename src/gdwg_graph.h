@@ -5,16 +5,24 @@
 //       ... this won't just compile
 //       straight away
 namespace gdwg {
-	class edge {
+	class Edge {
 	 public:
 	 private:
 		// You may need to add data members and member functions
-		friend class graph;
+		friend class Graph;
 	};
-	class graph {
-	 public:
-		using edge = gdwg::edge;
 
+	class WeightedEdge {
+	 public:
+	 private:
+	};
+
+	class UnweightedEdge {
+	 public:
+	 private:
+	};
+	class Graph {
+	 public:
 		// Your member functions go here
 	 private:
 	};

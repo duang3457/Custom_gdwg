@@ -23,26 +23,26 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # helpful compiler flags for gcc/clang
 # the descriptions for these flags can be found on the GNU Compiler Collection's webpage.
-add_compile_options(
-  -Wall
-  -Wextra
-  -Werror
-  -pedantic-errors
-  -Wconversion
-  -Wsign-conversion
-  -Wdouble-promotion
-  -Wcast-align
-  -Wformat=2
-  -Wuninitialized
-  -Wnull-dereference
-  -Wnon-virtual-dtor
-  -Woverloaded-virtual
-  -Wdeprecated-copy-dtor
-  -Wold-style-cast
-  -Wzero-as-null-pointer-constant
-  -Wsuggest-override
-  -fstack-protector-strong
-)
+#add_compile_options(
+#  -Wall
+#  -Wextra
+#  -Werror
+#  -pedantic-errors
+#  -Wconversion
+#  -Wsign-conversion
+#  -Wdouble-promotion
+#  -Wcast-align
+#  -Wformat=2
+#  -Wuninitialized
+#  -Wnull-dereference
+#  -Wnon-virtual-dtor
+#  -Woverloaded-virtual
+#  -Wdeprecated-copy-dtor
+#  -Wold-style-cast
+#  -Wzero-as-null-pointer-constant
+#  -Wsuggest-override
+#  -fstack-protector-strong
+#)
 
 # debug builds should be compiled with sanitizers
 # sanitizers are small libraries that check things like buffer overrun with minimal runtime overhead.
