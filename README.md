@@ -4,7 +4,8 @@
 
 # 1 Change Log <a name="1-change-log"></a>
 
-27/07/25, Clarified throwing behaviour in `replace_node` function. Removed disclaimer about `Graph()` throwing nothing.
+27/07/25, Clarified throwing behaviour in `replace_node` function. Removed disclaimer about `Graph()` throwing nothing. 
+27/07/25, Edited typos of `edge` to `Edge`
 
 # 2 The Task <a name="2-the-task"></a>
 
@@ -161,7 +162,7 @@ auto get_nodes() -> std::pair<N, N>;
   10. *Returns*: A pair of the source and destination nodes of the edge.
 
 ```cpp
-auto operator==(edge const& other) -> bool;
+auto operator==(Edge const& other) -> bool;
 ```
   11. *Returns*: Returns true if two edges are equal, false otherwise
 
@@ -346,7 +347,7 @@ auto clear() noexcept -> void;
 7. *Complexity*: *O*(*n*), where *n* is the number of stored nodes.
 
 ```cpp
-[[nodiscard]] auto edges(N const& src, N const& dst) -> std::vector<std::unique_ptr<edge<N,E>>>;
+[[nodiscard]] auto edges(N const& src, N const& dst) -> std::vector<std::unique_ptr<Edge<N,E>>>;
 ```
 
 8. *Returns*: All edges from `src` to `dst`, start with the unweighted edge (if exists), then the rest of the weighted edges are sorted in ascending order by edge weights. This returns **copies** of the specified data.
