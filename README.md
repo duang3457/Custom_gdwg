@@ -4,6 +4,9 @@
 
 # 1 Change Log <a name="1-change-log"></a>
 
+27/07/25, Clarified throwing behaviour in `replace_node` function. Removed disclaimer about `Graph()` throwing nothing. 
+27/07/25, Edited typos of `edge` to `Edge`
+
 # 2 The Task <a name="2-the-task"></a>
 
 In this assignment, you will write a *generic directed weighted graph* (GDWG) with value-semantics in C++. Both the data stored at a node and the weight stored at an edge will be parameterised types. The types may be different. For example, here is a graph with nodes storing `std::string` and edges weighted by `int`:
@@ -73,8 +76,6 @@ Graph();
 ```
 
 1. *Effects*: <a href="https://en.cppreference.com/w/cpp/language/value_initialization">Value initialises</a> all members.
-
-2. *Throws*: Nothing.
 
 ```cpp
 Graph(std::initializer_list<N> il);
@@ -161,7 +162,7 @@ auto get_nodes() -> std::pair<N, N>;
   10. *Returns*: A pair of the source and destination nodes of the edge.
 
 ```cpp
-auto operator==(edge const& other) -> bool;
+auto operator==(Edge const& other) -> bool;
 ```
   11. *Returns*: Returns true if two edges are equal, false otherwise
 
@@ -225,7 +226,7 @@ auto insert_edge(N const& src, N const& dst, std::optional<E> weight = std::null
 auto replace_node(N const& old_data, N const& new_data) -> bool;
 ```
 
-8. *Effects*: Replaces the original data, `old_data`, stored at this particular node by the replacement data, `new_data`. Does nothing if `new_data` already exists as a node.
+8. *Effects*: Replaces the original data, `old_data`, stored at this particular node by the replacement data, `new_data`. If `old_data` does not exist, throw. If `old_data` exists, do not replace `old_data` if `new_data` already exists as a node.
 
 9. *Postconditions*: All iterators are invalidated.
 
@@ -346,7 +347,7 @@ auto clear() noexcept -> void;
 7. *Complexity*: *O*(*n*), where *n* is the number of stored nodes.
 
 ```cpp
-[[nodiscard]] auto edges(N const& src, N const& dst) -> std::vector<std::unique_ptr<edge<N,E>>>;
+[[nodiscard]] auto edges(N const& src, N const& dst) -> std::vector<std::unique_ptr<Edge<N,E>>>;
 ```
 
 8. *Returns*: All edges from `src` to `dst`, start with the unweighted edge (if exists), then the rest of the weighted edges are sorted in ascending order by edge weights. This returns **copies** of the specified data.

@@ -34,7 +34,7 @@ auto main() -> int {
 	// It allows you to unpack your tuple.
 	for (auto const& [from, to, weight] : g) {
 	    std::cout << from << " -> " << to << " ";
-	    if (weight.value()) {
+	    if (weight.has_value()) {
 	        std::cout << "(weight " << weight << ")\n";
 	    } else {
 	        std::cout << "(no weight)\n";
