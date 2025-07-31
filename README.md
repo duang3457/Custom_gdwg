@@ -4,8 +4,9 @@
 
 # 1 Change Log <a name="1-change-log"></a>
 
-27/07/25, Clarified throwing behaviour in `replace_node` function. Removed disclaimer about `Graph()` throwing nothing. 
-27/07/25, Edited typos of `edge` to `Edge`
+* 27/07/25, Clarified throwing behaviour in `replace_node` function. Removed disclaimer about `Graph()` throwing nothing. 
+* 27/07/25, Edited typos of `edge` to `Edge`
+* 31/07/25, Explicitly noting that Iterator Invalidation does not have to be built by students, but instead is assumed as a post condition after relevant functions.
 
 # 2 The Task <a name="2-the-task"></a>
 
@@ -45,7 +46,7 @@ Some words have special meaning in this document. This section precisely defines
 
 * *Preconditions*: the conditions that the function assumes to hold whenever it is called; violation of any preconditions results in undefined behaviours.
 * *Effects*: the actions performed by the function.
-* *Postconditions*: the conditions (sometimes termed observable results) established by the function.
+* *Postconditions*: the conditions (sometimes termed observable results) established by the function. For iterator invalidation, this is an assumed postcondition, and does not have to be written by students.
 * *Returns*: a description of the value(s) returned by the function.
 * *Throws*: any exceptions thrown by the function, and the conditions that would cause the exception.
 * *Complexity*: the time and/or space complexity of the function.
