@@ -50,6 +50,10 @@ namespace gdwg {
 		auto insert_node(N const& value) -> bool;
 
 	 private:
+		std::set<N> nodes_; // Set of nodes in the graph
+		std::multimap<N, std::unique_ptr<gdwg::Edge<N, E>>> edges_; // Map of edges, where each edge is associated with
+		                                                            // a node
+
 		template<typename, typename>
 		friend class Graph; // Allow Graph to access private members
 	};
@@ -67,6 +71,36 @@ namespace gdwg {
 		for (auto it = first; it != last; ++it) {
 			insert_node(*it);
 		}
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::insert_node(N const& value) -> bool {
+		return nodes_.insert(value).second;
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::is_node(N const& value) const -> bool {
+		return nodes_.find(value) != nodes_.end();
+	}
+
+	template<typename N, typename E>
+	Graph<N, E>::Graph(Graph&& other) noexcept
+	: nodes_{std::move(other.nodes_)}
+	, edges_{std::move(other.edges_)} {
+		// Leave other in a valid but empty state
+		other.nodes_.clear();
+		other.edges_.clear();
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::operator=(Graph&& other) noexcept -> Graph<N, E>& {
+		if (this != &other) {
+			nodes_ = std::move(other.nodes_);
+			edges_ = std::move(other.edges_);
+			other.nodes_.clear();
+			other.edges_.clear();
+		}
+		return *this;
 	}
 
 } // namespace gdwg
