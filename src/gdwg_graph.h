@@ -77,6 +77,35 @@ namespace gdwg {
 	template<typename N, typename E>
 	class UnweightedEdge : public Edge<N, E> {
 	 public:
+		UnweightedEdge(N const& src, N const& dst)
+		: Edge<N, E>(src, dst) {}
+
+		auto print_edge() const -> std::string override {
+			// 格式: src -> dst | U
+			std::ostringstream oss;
+			oss << this->src_ << " -> " << this->dst_ << " | U";
+			return oss.str();
+		}
+
+		auto is_weighted() const noexcept -> bool override {
+			return false;
+		}
+
+		auto get_weight() const noexcept -> std::optional<E> override {
+			return std::nullopt;
+		}
+
+		auto get_nodes() const noexcept -> std::pair<N, N> override {
+			return {this->src_, this->dst_};
+		}
+
+		auto operator==(Edge<N, E> const& other) const noexcept -> bool override {
+			if (other.is_weighted())
+				return false;
+			auto [o_src, o_dst] = other.get_nodes();
+			return (this->src_ == o_src) && (this->dst_ == o_dst);
+		}
+
 	 private:
 	};
 
