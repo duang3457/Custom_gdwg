@@ -7,6 +7,7 @@
 * 27/07/25, Clarified throwing behaviour in `replace_node` function. Removed disclaimer about `Graph()` throwing nothing. 
 * 27/07/25, Edited typos of `edge` to `Edge`
 * 31/07/25, Explicitly noting that Iterator Invalidation does not have to be built by students, but instead is assumed as a post condition after relevant functions.
+* 3/08/25, Explicitly noting that internal representation of edges do not have to be `WeightedEdge` or `UnweightedEdge`, as long as public methods and requirements are fulfilled.
 
 # 2 The Task <a name="2-the-task"></a>
 
@@ -35,6 +36,10 @@ To summarise, you will need to implement the following classes along with `gdwg:
 * `Edge`: An abstract base class representing an edge in the graph, which can be either weighted or unweighted. It declares virtual functions that must be implemented by its derived classes.
 * `WeightedEdge`: A derived class of `Edge` that represents an edge with an associated weight.
 * `UnweightedEdge`: A derived class of `Edge` that represents an edge without an associated weight.
+
+Please note that these `Edge` subclasses are not necessarily required for a working internal representation of edges in your `Graph` class. Unless the function parameter types or return types explicitly mention `Edge`, `WeightedEdge`, or `UnweightedEdge`, you can use whatever internal representation you choose to use for `Edge` in your `Graph` when referring to function effects.
+
+For example, in `insert_edge`, the effects note "If weight is std::nullopt, an `UnweightedEdge` is created. Otherwise, a `WeightedEdge` with the specified weight is created." You can use whatever internal representation you choose (Including actual `Edge` subclasses) to represent `UnweightedEdge` or `WeightedEdge`. In contrast, for functions like the `edges` function, you must return `std::vector<std::unique_ptr<Edge<N,E>>>` which will require actual `Edge` unique pointers and concrete `UnweightedEdge` or `WeightedEdge` subclasses. 
 
 Note that edges can be **reflexive**, meaning the source and destination nodes of an edge could be the same.
 
