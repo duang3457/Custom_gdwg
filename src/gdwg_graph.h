@@ -205,6 +205,31 @@ namespace gdwg {
 		return nodes_.insert(value).second;
 	}
 
+	template<typename N, typename E>
+	auto Graph<N, E>::insert_edge(N const& src, N const& dst, std::optional<E> weight) -> bool {
+		if (!is_node(src) || !is_node(dst)) {
+			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::insert_edge when either src or dst node does not "
+			                         "exist");
+		}
+
+		for (auto const& [from, edge_ptr] : edges_) {
+			if (from == src) {
+				auto [e_src, e_dst] = edge_ptr->get_nodes();
+				if (e_dst == dst && edge_ptr->get_weight() == weight) {
+					return false;
+				}
+			}
+		}
+
+		if (weight) {
+			edges_.emplace(src, std::make_unique<WeightedEdge<N, E>>(src, dst, *weight));
+		}
+		else {
+			edges_.emplace(src, std::make_unique<UnweightedEdge<N, E>>(src, dst));
+		}
+		return true;
+	}
+
 } // namespace gdwg
 
 #endif // GDWG_GRAPH_H
