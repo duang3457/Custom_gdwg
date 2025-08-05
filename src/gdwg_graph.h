@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -36,12 +37,45 @@ namespace gdwg {
 		N dst_;
 	};
 
-	class WeightedEdge {
+	template<typename N, typename E>
+	class WeightedEdge : public Edge<N, E> {
 	 public:
+		WeightedEdge(N const& src, N const& dst, E const& weight)
+		: Edge<N, E>(src, dst)
+		, weight_{weight} {}
+
+		auto print_edge() const -> std::string override {
+			// src -> dst | W | weight
+			std::ostringstream oss;
+			oss << this->src_ << " -> " << this->dst_ << " | W | " << weight_;
+			return oss.str();
+		}
+
+		auto is_weighted() const noexcept -> bool override {
+			return true;
+		}
+
+		auto get_weight() const noexcept -> std::optional<E> override {
+			return weight_;
+		}
+
+		auto get_nodes() const noexcept -> std::pair<N, N> override {
+			return {this->src_, this->dst_};
+		}
+
+		auto operator==(Edge<N, E> const& other) const noexcept -> bool override {
+			if (!other.is_weighted())
+				return false;
+			auto [o_src, o_dst] = other.get_nodes();
+			return (this->src_ == o_src) && (this->dst_ == o_dst) && (this->weight_ == other.get_weight().value());
+		}
+
 	 private:
+		E weight_; // Weight of the edge
 	};
 
-	class UnweightedEdge {
+	template<typename N, typename E>
+	class UnweightedEdge : public Edge<N, E> {
 	 public:
 	 private:
 	};
