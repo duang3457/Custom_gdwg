@@ -4,7 +4,9 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace gdwg {
@@ -16,8 +18,22 @@ namespace gdwg {
 	 public:
 		virtual ~Edge() = default;
 
-	 private:
+		// 2.3.1
+		virtual auto print_edge() const -> std::string = 0;
+		virtual auto is_weighted() const noexcept -> bool = 0;
+		virtual auto get_weight() const noexcept -> std::optional<E> = 0;
+		virtual auto get_nodes() const noexcept -> std::pair<N, N> = 0;
+		virtual auto operator==(Edge const& other) const noexcept -> bool = 0;
+
+	 protected:
 		friend class Graph<N, E>;
+
+		Edge(N const& src, N const& dst)
+		: src_{src}
+		, dst_{dst} {}
+
+		N src_;
+		N dst_;
 	};
 
 	class WeightedEdge {
