@@ -2,15 +2,18 @@
 #define GDWG_GRAPH_H
 
 #include <initializer_list>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace gdwg {
+	// Forward declaration of Graph class
 	template<typename N, typename E>
 	class Graph;
 
@@ -81,7 +84,7 @@ namespace gdwg {
 		: Edge<N, E>(src, dst) {}
 
 		auto print_edge() const -> std::string override {
-			// 格式: src -> dst | U
+			// src -> dst | U
 			std::ostringstream oss;
 			oss << this->src_ << " -> " << this->dst_ << " | U";
 			return oss.str();
@@ -112,6 +115,7 @@ namespace gdwg {
 	template<typename N, typename E>
 	class Graph {
 	 public:
+		class iterator;
 		// 2.2 Constructors
 		Graph();
 		Graph(std::initializer_list<N> il);
@@ -126,7 +130,16 @@ namespace gdwg {
 		[[nodiscard]] auto empty() const -> bool;
 		[[nodiscard]] auto nodes() const -> std::vector<N>;
 
+		// 2.4 Modifiers
 		auto insert_node(N const& value) -> bool;
+		auto insert_edge(N const& src, N const& dst, std::optional<E> weight = std::nullopt) -> bool;
+		auto replace_node(N const& old_data, N const& new_data) -> bool;
+		auto merge_replace_node(N const& old_data, N const& new_data) -> void;
+		auto erase_node(N const& value) -> bool;
+		auto erase_edge(N const& src, N const& dst, std::optional<E> weight = std::nullopt) -> bool;
+		auto erase_edge(iterator i) -> iterator;
+		auto erase_edge(iterator i, iterator s) -> iterator;
+		auto clear() noexcept -> void;
 
 	 private:
 		std::set<N> nodes_; // Set of nodes in the graph
@@ -153,16 +166,6 @@ namespace gdwg {
 	}
 
 	template<typename N, typename E>
-	auto Graph<N, E>::insert_node(N const& value) -> bool {
-		return nodes_.insert(value).second;
-	}
-
-	template<typename N, typename E>
-	auto Graph<N, E>::is_node(N const& value) const -> bool {
-		return nodes_.find(value) != nodes_.end();
-	}
-
-	template<typename N, typename E>
 	Graph<N, E>::Graph(Graph&& other) noexcept
 	: nodes_{std::move(other.nodes_)}
 	, edges_{std::move(other.edges_)} {
@@ -180,6 +183,26 @@ namespace gdwg {
 			other.edges_.clear();
 		}
 		return *this;
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::is_node(N const& value) const -> bool {
+		return nodes_.find(value) != nodes_.end();
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::empty() const -> bool {
+		return nodes_.empty();
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::nodes() const -> std::vector<N> {
+		return {nodes_.begin(), nodes_.end()};
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::insert_node(N const& value) -> bool {
+		return nodes_.insert(value).second;
 	}
 
 } // namespace gdwg
