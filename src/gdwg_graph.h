@@ -230,6 +230,35 @@ namespace gdwg {
 		return true;
 	}
 
+	template<typename N, typename E>
+	auto Graph<N, E>::replace_node(N const& old_data, N const& new_data) -> bool {
+		if (!is_node(old_data)) {
+			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::replace_node on a node that doesn't exist");
+		}
+		if (is_node(new_data)) {
+			return false;
+		}
+
+		nodes_.erase(old_data);
+		nodes_.insert(new_data);
+
+		for (auto& [from, edge_ptr] : edges_) {
+			auto [src, dst] = edge_ptr->get_nodes();
+			if (src == old_data)
+				src = new_data;
+			if (dst == old_data)
+				dst = new_data;
+
+			if (edge_ptr->is_weighted()) {
+				edge_ptr = std::make_unique<WeightedEdge<N, E>>(src, dst, *edge_ptr->get_weight());
+			}
+			else {
+				edge_ptr = std::make_unique<UnweightedEdge<N, E>>(src, dst);
+			}
+		}
+		return true;
+	}
+
 } // namespace gdwg
 
 #endif // GDWG_GRAPH_H
