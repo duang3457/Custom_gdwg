@@ -259,6 +259,50 @@ namespace gdwg {
 		return true;
 	}
 
+	template<typename N, typename E>
+	auto Graph<N, E>::merge_replace_node(N const& old_data, N const& new_data) -> void {
+		if (!is_node(old_data) || !is_node(new_data)) {
+			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::merge_replace_node on old or new data if they "
+			                         "don't exist in the graph");
+		}
+
+		std::vector<std::tuple<N, N, std::optional<E>>> to_add;
+
+		for (auto const& [from, edge_ptr] : edges_) {
+			auto [src, dst] = edge_ptr->get_nodes();
+			if (src == old_data)
+				src = new_data;
+			if (dst == old_data)
+				dst = new_data;
+			to_add.emplace_back(src, dst, edge_ptr->get_weight());
+		}
+
+		erase_node(old_data);
+
+		for (auto const& [src, dst, w] : to_add) {
+			insert_edge(src, dst, w);
+		}
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::erase_node(N const& value) -> bool {
+		if (!is_node(value)) {
+			return false;
+		}
+		nodes_.erase(value);
+
+		for (auto it = edges_.begin(); it != edges_.end();) {
+			auto [src, dst] = it->second->get_nodes();
+			if (src == value || dst == value) {
+				it = edges_.erase(it);
+			}
+			else {
+				++it;
+			}
+		}
+		return true;
+	}
+
 } // namespace gdwg
 
 #endif // GDWG_GRAPH_H
