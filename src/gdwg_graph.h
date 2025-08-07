@@ -126,9 +126,14 @@ namespace gdwg {
 
 		auto operator=(Graph&& other) noexcept -> Graph&;
 
+		// 2.5 Accessors
 		[[nodiscard]] auto is_node(N const& value) const -> bool;
 		[[nodiscard]] auto empty() const -> bool;
+		[[nodiscard]] auto is_connected(N const& src, N const& dst) const -> bool;
 		[[nodiscard]] auto nodes() const -> std::vector<N>;
+		[[nodiscard]] auto edges(N const& src, N const& dst) const -> std::vector<std::unique_ptr<Edge<N, E>>>;
+		[[nodiscard]] auto find(N const& src, N const& dst, std::optional<E> weight = std::nullopt) const -> iterator;
+		[[nodiscard]] auto connections(N const& src) const -> std::vector<N>;
 
 		// 2.4 Modifiers
 		auto insert_node(N const& value) -> bool;
@@ -183,21 +188,6 @@ namespace gdwg {
 			other.edges_.clear();
 		}
 		return *this;
-	}
-
-	template<typename N, typename E>
-	auto Graph<N, E>::is_node(N const& value) const -> bool {
-		return nodes_.find(value) != nodes_.end();
-	}
-
-	template<typename N, typename E>
-	auto Graph<N, E>::empty() const -> bool {
-		return nodes_.empty();
-	}
-
-	template<typename N, typename E>
-	auto Graph<N, E>::nodes() const -> std::vector<N> {
-		return {nodes_.begin(), nodes_.end()};
 	}
 
 	template<typename N, typename E>
@@ -337,6 +327,37 @@ namespace gdwg {
 	auto Graph<N, E>::clear() noexcept -> void {
 		nodes_.clear();
 		edges_.clear();
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::is_node(N const& value) const -> bool {
+		return nodes_.contains(value);
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::empty() const -> bool {
+		return nodes_.empty();
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::nodes() const -> std::vector<N> {
+		return {nodes_.begin(), nodes_.end()};
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::is_connected(N const& src, N const& dst) const -> bool {
+		if (!is_node(src) || !is_node(dst)) {
+			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::is_connected if src or dst node don't exist in "
+			                         "the graph");
+		}
+
+		auto range = edges_.equal_range(src);
+		for (auto it = range.first; it != range.second; ++it) {
+			if (it->second->get_nodes().second == dst) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 } // namespace gdwg
