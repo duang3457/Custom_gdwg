@@ -566,7 +566,7 @@ namespace gdwg {
 		: current_{it} {}
 
 		auto operator*() const -> reference {
-			auto [src, edge_ptr] = *current_;
+			auto const& edge_ptr = current_->second;
 			auto [e_src, e_dst] = edge_ptr->get_nodes();
 			return {e_src, e_dst, edge_ptr->get_weight()};
 		}

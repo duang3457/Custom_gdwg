@@ -93,7 +93,7 @@ TEST_CASE("2.4 Modifiers - insert_node and insert_edge") {
 	                  "Cannot call gdwg::Graph<N, E>::insert_edge when either src or dst node does not exist");
 }
 
-TEST_CASE("2.5 is_node, empty, nodes") {
+TEST_CASE("2.5 Accessors - is_node, empty, nodes") {
 	auto g = gdwg::Graph<std::string, int>{};
 	CHECK(g.empty());
 
@@ -121,7 +121,7 @@ TEST_CASE("2.5 is_connected") {
 	                  "Cannot call gdwg::Graph<N, E>::is_connected if src or dst node don't exist in the graph");
 }
 
-TEST_CASE("2.5 edges() returns correct edge list") {
+TEST_CASE("2.5 Accessors - edges() returns correct edge list") {
 	auto g = gdwg::Graph<std::string, int>{"x", "y"};
 	g.insert_edge("x", "y");
 	g.insert_edge("x", "y", 1);
@@ -137,4 +137,37 @@ TEST_CASE("2.5 edges() returns correct edge list") {
 
 	CHECK_THROWS_WITH(g.edges("x", "z"),
 	                  "Cannot call gdwg::Graph<N, E>::edges if src or dst node don't exist in the graph");
+}
+
+TEST_CASE("2.5 Accessors - connections returns sorted destination nodes") {
+	auto g = gdwg::Graph<std::string, int>{"a", "b", "c", "d"};
+	g.insert_edge("a", "b");
+	g.insert_edge("a", "c", 3);
+	g.insert_edge("a", "d", 2);
+
+	auto conns = g.connections("a");
+	CHECK(conns == std::vector<std::string>{"b", "c", "d"});
+
+	CHECK_THROWS_WITH(g.connections("x"), "Cannot call gdwg::Graph<N, E>::connections if src doesn't exist in the graph");
+}
+
+TEST_CASE("2.5 Accessors - find returns correct iterator") {
+	auto g = gdwg::Graph<std::string, int>{"p", "q"};
+	g.insert_edge("p", "q", 7);
+	g.insert_edge("p", "q");
+
+	auto it = g.find("p", "q", 7);
+	REQUIRE(it != g.end());
+	auto [from1, to1, weight1] = *it;
+	CHECK(from1 == "p");
+	CHECK(to1 == "q");
+	CHECK(weight1 == 7);
+
+	auto it2 = g.find("p", "q");
+	REQUIRE(it2 != g.end());
+	auto [from2, to2, weight2] = *it2;
+	CHECK(weight2 == std::nullopt);
+
+	auto it3 = g.find("q", "p", 1);
+	CHECK(it3 == g.end()); // not found
 }
