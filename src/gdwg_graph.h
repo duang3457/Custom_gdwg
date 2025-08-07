@@ -117,6 +117,10 @@ namespace gdwg {
 	class Graph {
 	 public:
 		class iterator;
+
+		auto begin() const -> iterator;
+		auto end() const -> iterator;
+
 		// 2.2 Constructors
 		Graph();
 		Graph(std::initializer_list<N> il);
@@ -394,6 +398,30 @@ namespace gdwg {
 		}
 
 		return result;
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::find(N const& src, N const& dst, std::optional<E> weight) const -> iterator {
+		for (auto it = edges_.begin(); it != edges_.end(); ++it) {
+			if (it->second->get_nodes() == std::pair<N, N>{src, dst} && it->second->get_weight() == weight) {
+				return iterator{it};
+			}
+		}
+		return end();
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::connections(N const& src) const -> std::vector<N> {
+		if (!is_node(src)) {
+			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::connections if src doesn't exist in the graph");
+		}
+
+		std::set<N> dsts;
+		auto range = edges_.equal_range(src);
+		for (auto it = range.first; it != range.second; ++it) {
+			dsts.insert(it->second->get_nodes().second);
+		}
+		return {dsts.begin(), dsts.end()};
 	}
 
 } // namespace gdwg
