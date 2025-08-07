@@ -303,6 +303,42 @@ namespace gdwg {
 		return true;
 	}
 
+	template<typename N, typename E>
+	auto Graph<N, E>::erase_edge(N const& src, N const& dst, std::optional<E> weight) -> bool {
+		if (!is_node(src) || !is_node(dst)) {
+			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::erase_edge on src or dst if they don't exist in "
+			                         "the graph");
+		}
+
+		for (auto it = edges_.begin(); it != edges_.end(); ++it) {
+			auto [e_src, e_dst] = it->second->get_nodes();
+			if (e_src == src && e_dst == dst && it->second->get_weight() == weight) {
+				edges_.erase(it);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::erase_edge(iterator i) -> iterator {
+		auto next_it = std::next(i);
+		edges_.erase(i);
+		return next_it;
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::erase_edge(iterator i, iterator s) -> iterator {
+		edges_.erase(i, s);
+		return s;
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::clear() noexcept -> void {
+		nodes_.clear();
+		edges_.clear();
+	}
+
 } // namespace gdwg
 
 #endif // GDWG_GRAPH_H
