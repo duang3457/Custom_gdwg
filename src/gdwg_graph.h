@@ -458,6 +458,32 @@ namespace gdwg {
 			return {e_src, e_dst, edge_ptr->get_weight()};
 		}
 
+		auto operator++() -> iterator& {
+			++current_;
+			return *this;
+		}
+
+		auto operator++(int) -> iterator {
+			auto temp = *this;
+			++*this;
+			return temp;
+		}
+
+		auto operator--() -> iterator& {
+			--current_;
+			return *this;
+		}
+
+		auto operator--(int) -> iterator {
+			auto temp = *this;
+			--*this;
+			return temp;
+		}
+
+		auto operator==(iterator const& other) const -> bool {
+			return current_ == other.current_;
+		}
+
 	 private:
 		typename std::multimap<N, std::unique_ptr<Edge<N, E>>>::const_iterator current_;
 	};
