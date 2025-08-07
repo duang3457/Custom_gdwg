@@ -2,6 +2,7 @@
 #define GDWG_GRAPH_H
 
 #include <initializer_list>
+#include <algorithm>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -358,6 +359,41 @@ namespace gdwg {
 			}
 		}
 		return false;
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::edges(N const& src, N const& dst) const -> std::vector<std::unique_ptr<Edge<N, E>>> {
+		if (!is_node(src) || !is_node(dst)) {
+			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::edges if src or dst node don't exist in the "
+			                         "graph");
+		}
+
+		std::vector<std::unique_ptr<Edge<N, E>>> result;
+		auto range = edges_.equal_range(src);
+		std::vector<std::unique_ptr<Edge<N, E>>> weighted;
+		bool unweighted_added = false;
+
+		for (auto it = range.first; it != range.second; ++it) {
+			if (it->second->get_nodes().second == dst) {
+				if (it->second->is_weighted()) {
+					weighted.push_back(std::make_unique<WeightedEdge<N, E>>(src, dst, *it->second->get_weight()));
+				}
+				else if (!unweighted_added) {
+					result.push_back(std::make_unique<UnweightedEdge<N, E>>(src, dst));
+					unweighted_added = true;
+				}
+			}
+		}
+
+		std::sort(weighted.begin(), weighted.end(), [](auto const& a, auto const& b) {
+			return a->get_weight().value() < b->get_weight().value();
+		});
+
+		for (auto& w : weighted) {
+			result.push_back(std::move(w));
+		}
+
+		return result;
 	}
 
 } // namespace gdwg
