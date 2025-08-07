@@ -151,6 +151,9 @@ namespace gdwg {
 		auto erase_edge(iterator i, iterator s) -> iterator;
 		auto clear() noexcept -> void;
 
+		// 2,7 Comparisons
+		[[nodiscard]] auto operator==(Graph const& other) const -> bool;
+
 	 private:
 		std::set<N> nodes_; // Set of nodes in the graph
 		std::multimap<N, std::unique_ptr<gdwg::Edge<N, E>>> edges_; // Map of edges, where each edge is associated with
@@ -434,6 +437,32 @@ namespace gdwg {
 		return iterator{edges_.cend()};
 	}
 
+	// 2,7 Comparisons
+	template<typename N, typename E>
+	auto Graph<N, E>::operator==(Graph const& other) const -> bool {
+		if (nodes_ != other.nodes_) {
+			return false;
+		}
+
+		if (edges_.size() != other.edges_.size()) {
+			return false;
+		}
+
+		auto it1 = edges_.cbegin();
+		auto it2 = other.edges_.cbegin();
+		for (; it1 != edges_.cend(); ++it1, ++it2) {
+			if (it1->first != it2->first) {
+				return false;
+			}
+			if (!(*(it1->second) == *(it2->second))) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	// 2.9 Iterator class
 	template<typename N, typename E>
 	class Graph<N, E>::iterator {
 	 public:
