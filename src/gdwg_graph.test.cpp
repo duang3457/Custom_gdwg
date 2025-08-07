@@ -52,3 +52,14 @@ TEST_CASE("2.2 Constructors - copy constructor") {
 	CHECK(g1.is_node(11));
 	CHECK(g1.is_node(12));
 }
+
+TEST_CASE("2.2 Constructors - copy assignment") {
+	auto g1 = gdwg::Graph<int, std::string>{13, 14};
+	auto g2 = gdwg::Graph<int, std::string>{};
+	g2 = g1;
+
+	CHECK(g2.is_node(13));
+	CHECK(g2.is_node(14));
+	CHECK(g1.is_node(13));
+	CHECK(g1.is_node(14));
+}

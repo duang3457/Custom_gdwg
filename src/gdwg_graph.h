@@ -230,6 +230,20 @@ namespace gdwg {
 	}
 
 	template<typename N, typename E>
+	auto gdwg::Graph<N, E>::operator=(Graph const& other) -> Graph<N, E>& {
+		if (this != &other) {
+			nodes_ = other.nodes_;
+
+			edges_.clear();
+
+			for (auto const& [src, edge_ptr] : other.edges_) {
+				edges_.insert({src, clone_edge(*edge_ptr)});
+			}
+		}
+		return *this;
+	}
+
+	template<typename N, typename E>
 	auto Graph<N, E>::insert_node(N const& value) -> bool {
 		return nodes_.insert(value).second;
 	}
