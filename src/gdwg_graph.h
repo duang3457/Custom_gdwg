@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <set>
 #include <sstream>
 #include <string>
@@ -153,6 +154,10 @@ namespace gdwg {
 
 		// 2,7 Comparisons
 		[[nodiscard]] auto operator==(Graph const& other) const -> bool;
+
+		// 2.8 Extractor 
+		template<typename NN, typename EE>
+		friend auto operator<<(std::ostream& os, Graph<NN, EE> const& g) -> std::ostream&;
 
 	 private:
 		std::set<N> nodes_; // Set of nodes in the graph
@@ -460,6 +465,49 @@ namespace gdwg {
 		}
 
 		return true;
+	}
+
+	// 2.8 Extractor
+	template<typename N, typename E>
+	auto operator<<(std::ostream& os, Graph<N, E> const& g) -> std::ostream& {
+		if (g.empty()) {
+			os << "()";
+			return os;
+		}
+
+		for (auto const& src : g.nodes_) {
+			os << src << " (\n";
+
+			std::vector<std::string> unweighted;
+			std::vector<std::pair<E, std::string>> weighted;
+
+			auto range = g.edges_.equal_range(src);
+			for (auto it = range.first; it != range.second; ++it) {
+				auto const& edge_ptr = it->second;
+				auto [from, to] = edge_ptr->get_nodes();
+
+				if (edge_ptr->is_weighted()) {
+					weighted.emplace_back(*edge_ptr->get_weight(),
+					                      from + " -> " + to + " | W | " + to_string(*edge_ptr->get_weight()));
+				}
+				else {
+					unweighted.push_back(from + " -> " + to + " | U");
+				}
+			}
+
+			for (auto const& line : unweighted) {
+				os << "  " << line << "\n";
+			}
+
+			std::sort(weighted.begin(), weighted.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
+
+			for (auto const& [_w, line] : weighted) {
+				os << "  " << line << "\n";
+			}
+
+			os << ")\n";
+		}
+		return os;
 	}
 
 	// 2.9 Iterator class
