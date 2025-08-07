@@ -76,8 +76,6 @@ namespace gdwg {
 		}
 
 	 private:
-		N src_;
-		N dst_;
 		E weight_; // Weight of the edge
 	};
 
@@ -114,8 +112,6 @@ namespace gdwg {
 		}
 
 	 private:
-		N src_;
-		N dst_;
 	};
 
 	template<typename N, typename E>

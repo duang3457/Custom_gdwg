@@ -63,3 +63,32 @@ TEST_CASE("2.2 Constructors - copy assignment") {
 	CHECK(g1.is_node(13));
 	CHECK(g1.is_node(14));
 }
+
+TEST_CASE("2.3 Edge hierarchy - print_edge and weight") {
+	auto we = gdwg::WeightedEdge<std::string, int>("A", "B", 10);
+	auto ue = gdwg::UnweightedEdge<std::string, int>("A", "B");
+
+	CHECK(we.print_edge() == "A -> B | W | 10");
+	CHECK(ue.print_edge() == "A -> B | U");
+	CHECK(we.is_weighted() == true);
+	CHECK(ue.is_weighted() == false);
+	CHECK(we.get_weight() == 10);
+	CHECK(ue.get_weight() == std::nullopt);
+	CHECK(we.get_nodes() == std::pair<std::string, std::string>{"A", "B"});
+	CHECK(ue.get_nodes() == std::pair<std::string, std::string>{"A", "B"});
+}
+
+TEST_CASE("2.4 Modifiers - insert_node and insert_edge") {
+	auto g = gdwg::Graph<std::string, int>{};
+	CHECK(g.insert_node("A"));
+	CHECK(g.insert_node("B"));
+	CHECK_FALSE(g.insert_node("A")); // already exists
+
+	CHECK(g.insert_edge("A", "B", 15)); // weighted
+	CHECK(g.insert_edge("A", "B")); // unweighted
+	CHECK_FALSE(g.insert_edge("A", "B", 15)); // duplicate weighted
+	CHECK_FALSE(g.insert_edge("A", "B")); // duplicate unweighted
+
+	CHECK_THROWS_WITH(g.insert_edge("A", "C", 12),
+	                  "Cannot call gdwg::Graph<N, E>::insert_edge when either src or dst node does not exist");
+}
