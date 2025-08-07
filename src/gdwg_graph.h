@@ -424,6 +424,43 @@ namespace gdwg {
 		return {dsts.begin(), dsts.end()};
 	}
 
+	template<typename N, typename E>
+	auto Graph<N, E>::begin() const -> iterator {
+		return iterator{edges_.cbegin()};
+	}
+
+	template<typename N, typename E>
+	auto Graph<N, E>::end() const -> iterator {
+		return iterator{edges_.cend()};
+	}
+
+	template<typename N, typename E>
+	class Graph<N, E>::iterator {
+	 public:
+		using value_type = struct {
+			N from;
+			N to;
+			std::optional<E> weight;
+		};
+		using reference = value_type;
+		using pointer = void;
+		using difference_type = std::ptrdiff_t;
+		using iterator_category = std::bidirectional_iterator_tag;
+
+		iterator() = default;
+
+		explicit iterator(typename std::multimap<N, std::unique_ptr<Edge<N, E>>>::const_iterator it)
+		: current_{it} {}
+
+		auto operator*() const -> reference {
+			auto [src, edge_ptr] = *current_;
+			auto [e_src, e_dst] = edge_ptr->get_nodes();
+			return {e_src, e_dst, edge_ptr->get_weight()};
+		}
+
+	 private:
+		typename std::multimap<N, std::unique_ptr<Edge<N, E>>>::const_iterator current_;
+	};
 } // namespace gdwg
 
 #endif // GDWG_GRAPH_H
