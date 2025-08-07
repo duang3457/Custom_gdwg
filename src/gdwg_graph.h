@@ -76,6 +76,8 @@ namespace gdwg {
 		}
 
 	 private:
+		N src_;
+		N dst_;
 		E weight_; // Weight of the edge
 	};
 
@@ -112,7 +114,20 @@ namespace gdwg {
 		}
 
 	 private:
+		N src_;
+		N dst_;
 	};
+
+	template<typename N, typename E>
+	std::unique_ptr<Edge<N, E>> clone_edge(Edge<N, E> const& edge) {
+		auto [src, dst] = edge.get_nodes();
+		if (edge.is_weighted()) {
+			return std::make_unique<WeightedEdge<N, E>>(src, dst, edge.get_weight().value());
+		}
+		else {
+			return std::make_unique<UnweightedEdge<N, E>>(src, dst);
+		}
+	}
 
 	template<typename N, typename E>
 	class Graph {
@@ -129,8 +144,10 @@ namespace gdwg {
 		Graph(InputIt first, InputIt last);
 
 		Graph(Graph&& other) noexcept;
-
 		auto operator=(Graph&& other) noexcept -> Graph&;
+
+		Graph(Graph const& other);
+		auto operator=(Graph const& other) -> Graph&;
 
 		// 2.5 Accessors
 		[[nodiscard]] auto is_node(N const& value) const -> bool;
@@ -201,6 +218,15 @@ namespace gdwg {
 			other.edges_.clear();
 		}
 		return *this;
+	}
+
+	template<typename N, typename E>
+	gdwg::Graph<N, E>::Graph(Graph const& other) {
+		nodes_ = other.nodes_;
+
+		for (auto const& [src, edge_ptr] : other.edges_) {
+			edges_.insert({src, clone_edge(*edge_ptr)});
+		}
 	}
 
 	template<typename N, typename E>
