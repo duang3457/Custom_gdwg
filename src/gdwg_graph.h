@@ -173,9 +173,27 @@ namespace gdwg {
 		friend auto operator<<(std::ostream& os, Graph<NN, EE> const& g) -> std::ostream&;
 
 	 private:
+		struct EdgeKey {
+			N src;
+			N dst;
+			bool is_weighted;
+			std::optional<E> weight;
+		};
+
+		struct EdgeKeyLess {
+			bool operator()(EdgeKey const& a, EdgeKey const& b) const {
+				if (a.src != b.src)
+					return a.src < b.src;
+				if (a.dst != b.dst)
+					return a.dst < b.dst;
+				if (a.is_weighted != b.is_weighted)
+					return a.is_weighted < b.is_weighted;
+				return a.weight < b.weight;
+			}
+		};
+
 		std::set<N> nodes_; // Set of nodes in the graph
-		std::multimap<N, std::unique_ptr<gdwg::Edge<N, E>>> edges_; // Map of edges, where each edge is associated with
-		                                                            // a node
+		std::map<EdgeKey, std::unique_ptr<gdwg::Edge<N, E>>, EdgeKeyLess> edges_;
 
 		template<typename, typename>
 		friend class Graph; // Allow Graph to access private members
@@ -251,20 +269,15 @@ namespace gdwg {
 			                         "exist");
 		}
 
-		for (auto const& [from, edge_ptr] : edges_) {
-			if (from == src) {
-				auto [e_src, e_dst] = edge_ptr->get_nodes();
-				if (e_dst == dst && edge_ptr->get_weight() == weight) {
-					return false;
-				}
-			}
-		}
+		EdgeKey key{src, dst, weight.has_value(), weight};
+		if (edges_.find(key) != edges_.end())
+			return false;
 
 		if (weight) {
-			edges_.emplace(src, std::make_unique<WeightedEdge<N, E>>(src, dst, *weight));
+			edges_.emplace(key, std::make_unique<WeightedEdge<N, E>>(src, dst, *weight));
 		}
 		else {
-			edges_.emplace(src, std::make_unique<UnweightedEdge<N, E>>(src, dst));
+			edges_.emplace(key, std::make_unique<UnweightedEdge<N, E>>(src, dst));
 		}
 		return true;
 	}
@@ -342,34 +355,19 @@ namespace gdwg {
 		return true;
 	}
 
+	// by key
 	template<typename N, typename E>
 	auto Graph<N, E>::erase_edge(N const& src, N const& dst, std::optional<E> weight) -> bool {
 		if (!is_node(src) || !is_node(dst)) {
 			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::erase_edge on src or dst if they don't exist in "
 			                         "the graph");
 		}
-
-		for (auto it = edges_.begin(); it != edges_.end(); ++it) {
-			auto [e_src, e_dst] = it->second->get_nodes();
-			if (e_src == src && e_dst == dst && it->second->get_weight() == weight) {
-				edges_.erase(it);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	template<typename N, typename E>
-	auto Graph<N, E>::erase_edge(iterator i) -> iterator {
-		auto next_it = std::next(i);
-		edges_.erase(i);
-		return next_it;
-	}
-
-	template<typename N, typename E>
-	auto Graph<N, E>::erase_edge(iterator i, iterator s) -> iterator {
-		edges_.erase(i, s);
-		return s;
+		EdgeKey key{src, dst, weight.has_value(), weight};
+		auto it = edges_.find(key);
+		if (it == edges_.end())
+			return false;
+		edges_.erase(it);
+		return true;
 	}
 
 	template<typename N, typename E>
@@ -399,12 +397,10 @@ namespace gdwg {
 			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::is_connected if src or dst node don't exist in "
 			                         "the graph");
 		}
-
-		auto range = edges_.equal_range(src);
-		for (auto it = range.first; it != range.second; ++it) {
-			if (it->second->get_nodes().second == dst) {
-				return true;
-			}
+		typename Graph<N, E>::EdgeKey lb{src, dst, false, std::nullopt};
+		for (auto it = edges_.lower_bound(lb); it != edges_.end() && it->first.src == src && it->first.dst == dst; ++it)
+		{
+			return true;
 		}
 		return false;
 	}
@@ -415,43 +411,15 @@ namespace gdwg {
 			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::edges if src or dst node don't exist in the "
 			                         "graph");
 		}
-
-		std::vector<std::unique_ptr<Edge<N, E>>> result;
-		auto range = edges_.equal_range(src);
-		std::vector<std::unique_ptr<Edge<N, E>>> weighted;
-		bool unweighted_added = false;
-
-		for (auto it = range.first; it != range.second; ++it) {
-			if (it->second->get_nodes().second == dst) {
-				if (it->second->is_weighted()) {
-					weighted.push_back(std::make_unique<WeightedEdge<N, E>>(src, dst, *it->second->get_weight()));
-				}
-				else if (!unweighted_added) {
-					result.push_back(std::make_unique<UnweightedEdge<N, E>>(src, dst));
-					unweighted_added = true;
-				}
-			}
-		}
-
-		std::sort(weighted.begin(), weighted.end(), [](auto const& a, auto const& b) {
-			return a->get_weight().value() < b->get_weight().value();
-		});
-
-		for (auto& w : weighted) {
-			result.push_back(std::move(w));
-		}
-
-		return result;
+		std::vector<std::unique_ptr<Edge<N, E>>> out;
+		return out;
 	}
 
 	template<typename N, typename E>
 	auto Graph<N, E>::find(N const& src, N const& dst, std::optional<E> weight) const -> iterator {
-		for (auto it = edges_.begin(); it != edges_.end(); ++it) {
-			if (it->second->get_nodes() == std::pair<N, N>{src, dst} && it->second->get_weight() == weight) {
-				return iterator{it};
-			}
-		}
-		return end();
+		EdgeKey key{src, dst, weight.has_value(), weight};
+		auto it = edges_.find(key);
+		return (it == edges_.end()) ? this->end() : iterator{it};
 	}
 
 	template<typename N, typename E>
@@ -459,11 +427,11 @@ namespace gdwg {
 		if (!is_node(src)) {
 			throw std::runtime_error("Cannot call gdwg::Graph<N, E>::connections if src doesn't exist in the graph");
 		}
-
 		std::set<N> dsts;
-		auto range = edges_.equal_range(src);
-		for (auto it = range.first; it != range.second; ++it) {
-			dsts.insert(it->second->get_nodes().second);
+
+		typename Graph<N, E>::EdgeKey lb{src, N{}, false, std::nullopt};
+		for (auto it = edges_.lower_bound(lb); it != edges_.end() && it->first.src == src; ++it) {
+			dsts.insert(it->first.dst);
 		}
 		return {dsts.begin(), dsts.end()};
 	}
@@ -506,40 +474,8 @@ namespace gdwg {
 	// 2.8 Extractor
 	template<typename N, typename E>
 	auto operator<<(std::ostream& os, Graph<N, E> const& g) -> std::ostream& {
-		if (g.empty()) {
-			os << "()";
-			return os;
-		}
-
 		for (auto const& src : g.nodes_) {
 			os << src << " (\n";
-
-			std::vector<std::string> unweighted;
-			std::vector<std::pair<E, std::string>> weighted;
-
-			auto range = g.edges_.equal_range(src);
-			for (auto it = range.first; it != range.second; ++it) {
-				auto const& edge_ptr = it->second;
-				auto [from, to] = edge_ptr->get_nodes();
-
-				if (edge_ptr->is_weighted()) {
-					weighted.emplace_back(*edge_ptr->get_weight(),
-					                      from + " -> " + to + " | W | " + to_string(*edge_ptr->get_weight()));
-				}
-				else {
-					unweighted.push_back(from + " -> " + to + " | U");
-				}
-			}
-
-			for (auto const& line : unweighted) {
-				os << "  " << line << "\n";
-			}
-
-			std::sort(weighted.begin(), weighted.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
-
-			for (auto const& [_w, line] : weighted) {
-				os << "  " << line << "\n";
-			}
 
 			os << ")\n";
 		}
@@ -562,7 +498,8 @@ namespace gdwg {
 
 		iterator() = default;
 
-		explicit iterator(typename std::multimap<N, std::unique_ptr<Edge<N, E>>>::const_iterator it)
+		using UnderIt = typename std::map<EdgeKey, std::unique_ptr<Edge<N, E>>, EdgeKeyLess>::const_iterator;
+		explicit iterator(UnderIt it)
 		: current_{it} {}
 
 		auto operator*() const -> reference {
@@ -598,7 +535,8 @@ namespace gdwg {
 		}
 
 	 private:
-		typename std::multimap<N, std::unique_ptr<Edge<N, E>>>::const_iterator current_;
+		friend class Graph<N, E>;
+		UnderIt current_;
 	};
 } // namespace gdwg
 
