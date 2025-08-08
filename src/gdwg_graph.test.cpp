@@ -173,6 +173,16 @@ TEST_CASE("2.5 Accessors - find returns correct iterator") {
 }
 
 using graph = gdwg::Graph<int, int>;
+using triple = std::tuple<int, int, std::optional<int>>;
+
+static auto collect_all(graph const& g) -> std::vector<triple> {
+	std::vector<triple> out;
+	for (auto it = g.begin(); it != g.end(); ++it) {
+		auto v = *it; // v.from, v.to, v.weight
+		out.emplace_back(v.from, v.to, v.weight);
+	}
+	return out;
+}
 
 TEST_CASE("2.6 Iterator Access: begin()/end() basic") {
 	SECTION("empty graph: begin() == end()") {
@@ -203,5 +213,45 @@ TEST_CASE("2.6 Iterator Access: begin()/end() basic") {
 
 		++it;
 		REQUIRE(it == g.end());
+	}
+}
+
+TEST_CASE("2.6 Iterator Access: iteration order and const correctness") {
+	graph g;
+	for (int x : {1, 2, 3})
+		g.insert_node(x);
+
+	REQUIRE(g.insert_edge(1, 1)); // U
+	REQUIRE(g.insert_edge(1, 1, 2)); // W 2
+	REQUIRE(g.insert_edge(1, 2, 4)); // W 4
+	REQUIRE(g.insert_edge(1, 2, 3)); // W 3
+	// src=2
+	REQUIRE(g.insert_edge(2, 1)); // U
+	REQUIRE(g.insert_edge(2, 1, -5)); // W -5
+	REQUIRE(g.insert_edge(2, 2, 0)); // W 0
+	// src=3
+	REQUIRE(g.insert_edge(3, 3)); // U
+
+	// Expected traversal: src asc, then dst asc, U before W, then weights asc
+	std::vector<triple> expected{
+	    {1, 1, std::nullopt},
+	    {1, 1, 2},
+	    {1, 2, 3},
+	    {1, 2, 4},
+	    {2, 1, std::nullopt},
+	    {2, 1, -5},
+	    {2, 2, 0},
+	    {3, 3, std::nullopt},
+	};
+
+	SECTION("non-const begin()/end() produce expected sequence") {
+		auto got = collect_all(g);
+		REQUIRE(got == expected);
+	}
+
+	SECTION("const begin()/end() also work and produce same sequence") {
+		graph const& cg = g;
+		auto got = collect_all(cg);
+		REQUIRE(got == expected);
 	}
 }
