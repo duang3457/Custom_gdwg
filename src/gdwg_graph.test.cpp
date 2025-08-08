@@ -348,3 +348,42 @@ Z (
 
 	CHECK(oss.str() == expected);
 }
+
+using G2 = gdwg::Graph<int, int>;
+using Triple2 = std::tuple<int, int, std::optional<int>>;
+
+static std::vector<Triple2> collect(G2 const& g) {
+	std::vector<Triple2> v;
+	for (auto it = g.begin(); it != g.end(); ++it) {
+		auto x = *it;
+		v.emplace_back(x.from, x.to, x.weight);
+	}
+	return v;
+}
+
+TEST_CASE("2.9 iterator (simple)") {
+	G2 g;
+	for (int n : {1, 2, 3, 99})
+		g.insert_node(n);
+	g.insert_edge(1, 1); // U
+	g.insert_edge(1, 1, 2); // W 2
+	g.insert_edge(2, 1); // U
+
+	std::vector<Triple2> expected{
+	    {1, 1, std::nullopt},
+	    {1, 1, 2},
+	    {2, 1, std::nullopt},
+	};
+
+	CHECK(collect(g) == expected);
+
+	auto it = g.end();
+	--it;
+	auto [f, t, w] = *it;
+	CHECK(f == 2);
+	CHECK(t == 1);
+	CHECK_FALSE(w.has_value());
+
+	G2 const& cg = g;
+	CHECK(collect(cg) == expected);
+}
