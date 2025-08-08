@@ -370,6 +370,24 @@ namespace gdwg {
 		return true;
 	}
 
+	// by iterator
+	template<typename N, typename E>
+	auto Graph<N, E>::erase_edge(iterator i) -> iterator {
+		auto it = i.current_;
+		if (it == edges_.cend())
+			return this->end();
+		auto next = std::next(it);
+		edges_.erase(it);
+		return iterator{next};
+	}
+
+	// by range
+	template<typename N, typename E>
+	auto Graph<N, E>::erase_edge(iterator first, iterator last) -> iterator {
+		edges_.erase(first.current_, last.current_);
+		return last;
+	}
+
 	template<typename N, typename E>
 	auto Graph<N, E>::clear() noexcept -> void {
 		nodes_.clear();
@@ -476,7 +494,27 @@ namespace gdwg {
 	auto operator<<(std::ostream& os, Graph<N, E> const& g) -> std::ostream& {
 		for (auto const& src : g.nodes_) {
 			os << src << " (\n";
+			N current_dst{};
+			bool has_current = false;
+			auto flush_edge_line = [&](Edge<N, E> const& ep) {
+				auto [f, t] = ep.get_nodes();
+				os << "  " << f << " -> " << t;
+				if (ep.is_weighted()) {
+					os << " | W | " << *ep.get_weight() << "\n";
+				}
+				else {
+					os << " | U\n";
+				}
+			};
 
+			typename Graph<N, E>::EdgeKey lb{src, N{}, false, std::nullopt};
+			for (auto it = g.edges_.lower_bound(lb); it != g.edges_.end() && it->first.src == src; ++it) {
+				if (!has_current || it->first.dst != current_dst) {
+					current_dst = it->first.dst;
+					has_current = true;
+				}
+				flush_edge_line(*it->second);
+			}
 			os << ")\n";
 		}
 		return os;
