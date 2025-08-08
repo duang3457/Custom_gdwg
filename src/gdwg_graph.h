@@ -430,6 +430,18 @@ namespace gdwg {
 			                         "graph");
 		}
 		std::vector<std::unique_ptr<Edge<N, E>>> out;
+		EdgeKey lb{src, dst, false, std::nullopt};
+		for (auto it = edges_.lower_bound(lb); it != edges_.end() && it->first.src == src && it->first.dst == dst; ++it)
+		{
+			auto const& ep = it->second;
+
+			if (ep->is_weighted()) {
+				out.push_back(std::make_unique<WeightedEdge<N, E>>(src, dst, *ep->get_weight()));
+			}
+			else {
+				out.push_back(std::make_unique<UnweightedEdge<N, E>>(src, dst));
+			}
+		}
 		return out;
 	}
 
