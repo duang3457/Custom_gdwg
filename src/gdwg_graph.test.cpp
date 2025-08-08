@@ -171,3 +171,37 @@ TEST_CASE("2.5 Accessors - find returns correct iterator") {
 	auto it3 = g.find("q", "p", 1);
 	CHECK(it3 == g.end()); // not found
 }
+
+using graph = gdwg::Graph<int, int>;
+
+TEST_CASE("2.6 Iterator Access: begin()/end() basic") {
+	SECTION("empty graph: begin() == end()") {
+		graph g;
+		REQUIRE(g.begin() == g.end());
+	}
+
+	SECTION("nodes but no edges: begin() == end()") {
+		graph g;
+		g.insert_node(1);
+		g.insert_node(2);
+		REQUIRE(g.begin() == g.end());
+	}
+
+	SECTION("single edge: begin points to the first edge, ++ reaches end") {
+		graph g;
+		g.insert_node(1);
+		g.insert_node(2);
+		REQUIRE(g.insert_edge(1, 2)); // unweighted
+
+		auto it = g.begin();
+		REQUIRE(it != g.end());
+
+		auto v = *it;
+		CHECK(v.from == 1);
+		CHECK(v.to == 2);
+		CHECK_FALSE(v.weight.has_value());
+
+		++it;
+		REQUIRE(it == g.end());
+	}
+}
