@@ -387,3 +387,52 @@ TEST_CASE("2.9 iterator (simple)") {
 	G2 const& cg = g;
 	CHECK(collect(cg) == expected);
 }
+
+TEST_CASE("2.10: graph owns resources (nodes/edges outlive caller)") {
+	gdwg::Graph<std::string, int> g;
+
+	{
+		std::string a = "Hello";
+		std::string b = "World";
+		int w = 3;
+
+		g.insert_node(a);
+		g.insert_node(b);
+		g.insert_edge(a, b, w);
+
+		// Modifying the original variable should not affect the graph
+		a = "HELLO";
+		w = 999;
+	} // a, b, w go out of scope and are destroyed
+
+	CHECK(g.is_node("Hello"));
+	CHECK(g.is_node("World"));
+
+	auto es = g.edges("Hello", "World");
+	REQUIRE(es.size() == 1);
+	REQUIRE(es[0]->get_weight().has_value());
+	CHECK(*es[0]->get_weight() == 3);
+
+	// Inserted temporary objects should also be owned
+	CHECK(g.insert_node(std::string{"Temp"}));
+	CHECK(g.is_node("Temp"));
+}
+
+TEST_CASE("2.10: nodes()/edges() return copies (mutating copies doesn't affect graph)") {
+	gdwg::Graph<std::string, int> g;
+	g.insert_node("A");
+	g.insert_node("B");
+	g.insert_edge("A", "B", 1);
+	g.insert_edge("A", "B");
+
+	// nodes() is a copy
+	auto ns = g.nodes();
+	ns.push_back("ZZZ"); // Change return value
+	CHECK(g.nodes() == std::vector<std::string>{"A", "B"});
+
+	// edges() is a copy (edge objects are also copies)
+	auto es = g.edges("A", "B");
+	auto original_size = es.size();
+	es.clear(); // Change return value
+	CHECK(g.edges("A", "B").size() == original_size);
+}
