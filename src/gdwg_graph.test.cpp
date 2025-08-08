@@ -303,3 +303,48 @@ TEST_CASE("2.7 operator== (simple)") {
 		CHECK_FALSE(base == uw_vs_w);
 	}
 }
+
+TEST_CASE("2.8 Extractor: empty graph") {
+	gdwg::Graph<std::string, int> g;
+	std::ostringstream oss;
+	oss << g;
+	auto out = oss.str();
+	CHECK((out.empty() || out == "()" || out == "()\n"));
+}
+
+TEST_CASE("2.8 Extractor: formatted output and ordering") {
+	gdwg::Graph<std::string, int> g;
+
+	// nodes
+	g.insert_node("A");
+	g.insert_node("B");
+	g.insert_node("C");
+	g.insert_node("Z");
+
+	g.insert_edge("A", "B", 2); // W 2
+	g.insert_edge("A", "B"); // U
+	g.insert_edge("A", "A", -1); // W -1
+	g.insert_edge("A", "A"); // U
+	g.insert_edge("B", "C", 5); // W 5
+
+	std::ostringstream oss;
+	oss << g;
+
+	auto const expected = std::string{
+	    R"(A (
+  A -> A | U
+  A -> A | W | -1
+  A -> B | U
+  A -> B | W | 2
+)
+B (
+  B -> C | W | 5
+)
+C (
+)
+Z (
+)
+)"};
+
+	CHECK(oss.str() == expected);
+}
