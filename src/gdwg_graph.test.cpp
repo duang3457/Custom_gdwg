@@ -255,3 +255,51 @@ TEST_CASE("2.6 Iterator Access: iteration order and const correctness") {
 		REQUIRE(got == expected);
 	}
 }
+
+using G = gdwg::Graph<std::string, int>;
+using T = std::tuple<std::string, std::string, std::optional<int>>;
+
+static auto make(std::vector<std::string> nodes, std::vector<T> edges) -> G {
+	G g;
+	for (auto const& n : nodes)
+		g.insert_node(n);
+	for (auto const& [s, d, w] : edges) {
+		if (w)
+			g.insert_edge(s, d, *w);
+		else
+			g.insert_edge(s, d);
+	}
+	return g;
+}
+
+TEST_CASE("2.7 operator== (simple)") {
+	SECTION("empty graphs equal") {
+		G a, b;
+		CHECK(a == b);
+	}
+
+	SECTION("same nodes+edges equal regardless of insertion order") {
+		auto a = make({"a", "b", "c"}, {{"a", "b", std::nullopt}, {"a", "b", 2}, {"c", "c", std::nullopt}});
+		auto b = make({"c", "b", "a"}, {{"c", "c", std::nullopt}, {"a", "b", 2}, {"a", "b", std::nullopt}});
+		CHECK(a == b);
+	}
+
+	SECTION("different node set -> not equal") {
+		auto a = make({"a", "b"}, {});
+		auto b = make({"a", "b", "x"}, {});
+		CHECK_FALSE(a == b);
+	}
+
+	SECTION("edge differences -> not equal") {
+		auto base = make({"a", "b", "c"}, {{"a", "b", std::nullopt}, {"a", "b", 3}, {"c", "c", std::nullopt}});
+		// missing one edge
+		auto miss = make({"a", "b", "c"}, {{"a", "b", std::nullopt}, {"c", "c", std::nullopt}});
+		CHECK_FALSE(base == miss);
+		// different weight
+		auto diffw = make({"a", "b", "c"}, {{"a", "b", std::nullopt}, {"a", "b", 4}, {"c", "c", std::nullopt}});
+		CHECK_FALSE(base == diffw);
+		// unweighted vs weighted
+		auto uw_vs_w = make({"a", "b", "c"}, {{"a", "b", 0}, {"a", "b", 3}, {"c", "c", std::nullopt}});
+		CHECK_FALSE(base == uw_vs_w);
+	}
+}

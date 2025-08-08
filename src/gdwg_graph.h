@@ -178,6 +178,7 @@ namespace gdwg {
 			N dst;
 			bool is_weighted;
 			std::optional<E> weight;
+			bool operator==(EdgeKey const&) const = default;
 		};
 
 		struct EdgeKeyLess {
