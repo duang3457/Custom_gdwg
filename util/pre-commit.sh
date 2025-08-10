@@ -34,7 +34,7 @@ fi
 command=`git diff --stat --cached`
 insertions=`echo $command | grep -Eo '[0-9]+ insertions' | sed 's/ insertions//g'`
 
-if [[ "$insertions" -gt 50 ]]; then
+if [[ "$insertions" -gt 500 ]]; then
   git diff --stat --cached
   echo -e "\033[0;31m"
   echo "================================================================================"
