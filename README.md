@@ -1,2 +1,2 @@
-# Custom_gdwg
+# gdwg
 Custom generic directed weighted graph (C++)
